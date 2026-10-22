@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>赤ペン返却箱</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Klee+One:wght@600&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Zen+Old+Mincho:wght@400;700&display=swap">
+<style>
+:root { color-scheme: light; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body { margin: 0; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+
+/* Layout: 校正紙（原稿）を中央に置き、下から赤ペンの道具が出てくる。右（スマホでは下）に赤の一覧。 */
+:root {
+  --paper: #f7f8fa;
+  --sheet: #ffffff;
+  --ink: #23262d;
+  --ink-soft: #626875;
+  --rule: #dde1e8;
+  --red: #c7342a;
+  --red-wash: #fbe7e4;
+  --like: #2f6fb3;
+  --like-wash: #e3eefa;
+  --note: #b26a00;
+  --note-wash: #fff2d6;
+  --shadow: 0 1px 2px rgba(20,30,50,.06), 0 6px 24px rgba(20,30,50,.06);
+  --f-body: "Zen Old Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --f-ui: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+  --f-pen: "Klee One", "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #15171c; --sheet: #1d2027; --ink: #e6e8ee; --ink-soft: #9aa1ae; --rule: #2e333d;
+    --red: #ff6b5c; --red-wash: #3a1f1d; --like: #7fb4ee; --like-wash: #1b2a3c;
+    --note: #f0b54a; --note-wash: #33291a; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 24px rgba(0,0,0,.25);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #15171c; --sheet: #1d2027; --ink: #e6e8ee; --ink-soft: #9aa1ae; --rule: #2e333d;
+  --red: #ff6b5c; --red-wash: #3a1f1d; --like: #7fb4ee; --like-wash: #1b2a3c;
+  --note: #f0b54a; --note-wash: #33291a; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 24px rgba(0,0,0,.25);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--paper); color: var(--ink); font-family: var(--f-ui); font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 140px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 20px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; }
+h1 { font-family: var(--f-pen); font-weight: 600; color: var(--red); font-size: 1.7rem; margin: 0; letter-spacing: .02em; text-wrap: balance; }
+.lede { color: var(--ink-soft); margin: 0; font-size: .9rem; }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; box-shadow: var(--shadow); min-width: 0; }
+.panel-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--rule); }
+.label { font-size: .75rem; letter-spacing: .08em; color: var(--ink-soft); font-weight: 700; }
+input[type=text], textarea {
+  font: inherit; color: var(--ink); background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 8px 10px; width: 100%;
+}
+input[type=text]:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px solid var(--like); outline-offset: 2px; }
+.title-in { font-family: var(--f-body); font-weight: 700; font-size: 1rem; flex: 1 1 220px; min-width: 0; }
+button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid var(--rule); background: var(--sheet); color: var(--ink); padding: 7px 12px; }
+button:hover { border-color: var(--ink-soft); }
+button.primary { background: var(--red); border-color: var(--red); color: #fff; font-weight: 700; }
+button.ghost { background: transparent; }
+button.small { padding: 4px 10px; font-size: .85rem; }
+.paste-area { padding: 16px; display: grid; gap: 10px; }
+.paste-area textarea { min-height: 260px; font-family: var(--f-body); line-height: 1.9; resize: vertical; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.ms {
+  font-family: var(--f-body); font-size: 1.02rem; line-height: 2.05; white-space: pre-wrap; word-break: break-word;
+  padding: 20px clamp(16px, 4vw, 40px) 28px; max-width: 46em; margin: 0 auto;
+}
+.ms::selection, .ms *::selection { background: var(--red-wash); }
+.m { border-radius: 2px; cursor: pointer; position: relative; }
+.m-del { color: var(--red); text-decoration: line-through 2px var(--red); background: var(--red-wash); }
+.m-rep .old { text-decoration: line-through 2px var(--red); color: var(--ink-soft); }
+.m-rep .new { font-family: var(--f-pen); font-weight: 600; color: var(--red); background: var(--red-wash); padding: 0 .15em; user-select: none; -webkit-user-select: none; }
+.m-note { background: var(--note-wash); text-decoration: underline wavy var(--note); text-underline-offset: 5px; }
+.m-like { background: var(--like-wash); box-shadow: inset 0 -2px 0 var(--like); }
+.tag { font-family: var(--f-ui); font-size: .62rem; font-weight: 700; vertical-align: super; margin-left: 1px; user-select: none; -webkit-user-select: none; }
+.m-del .tag, .m-rep .tag { color: var(--red); }
+.m-note .tag { color: var(--note); }
+.m-like .tag { color: var(--like); }
+.m.flash { animation: flash 1s ease; }
+@keyframes flash { 0%, 100% { outline: 0 solid transparent; } 30% { outline: 3px solid var(--like); } }
+@media (prefers-reduced-motion: reduce) { .m.flash { animation: none; outline: 2px solid var(--like); } }
+.hint { padding: 0 16px 14px; color: var(--ink-soft); font-size: .85rem; text-align: center; }
+.list { list-style: none; margin: 0; padding: 8px; display: grid; gap: 6px; max-height: 60vh; overflow: auto; }
+@media (max-width: 860px) { .list { max-height: none; } }
+.item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: start; padding: 10px; border-radius: 8px; border: 1px solid var(--rule); background: var(--sheet); }
+.item:hover { border-color: var(--ink-soft); }
+.num { font-variant-numeric: tabular-nums; font-weight: 700; font-size: .8rem; min-width: 1.6em; text-align: right; color: var(--ink-soft); padding-top: 2px; }
+.kind { display: inline-block; font-size: .7rem; font-weight: 700; padding: 1px 7px; border-radius: 99px; margin-bottom: 3px; }
+.k-del, .k-rep { background: var(--red-wash); color: var(--red); }
+.k-note { background: var(--note-wash); color: var(--note); }
+.k-like { background: var(--like-wash); color: var(--like); }
+.quote { font-family: var(--f-body); font-size: .88rem; word-break: break-word; }
+.after { font-family: var(--f-pen); font-weight: 600; color: var(--red); font-size: .9rem; word-break: break-word; }
+.memo { color: var(--ink-soft); font-size: .85rem; word-break: break-word; }
+.empty { padding: 20px 16px; color: var(--ink-soft); font-size: .9rem; }
+.export { padding: 12px; border-top: 1px solid var(--rule); display: grid; gap: 8px; }
+.export button { width: 100%; }
+.counts { font-size: .8rem; color: var(--ink-soft); }
+.sheetbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  background: var(--sheet); border-top: 1px solid var(--rule); box-shadow: 0 -6px 24px rgba(20,30,50,.12);
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+}
+.sheet-in { max-width: 760px; margin: 0 auto; display: grid; gap: 10px; }
+.picked { font-family: var(--f-body); font-size: .9rem; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.picked b { color: var(--ink); font-weight: 700; }
+.tools { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.tools button { padding: 10px 6px; font-weight: 700; }
+.t-del, .t-rep { color: var(--red); }
+.t-note { color: var(--note); }
+.t-like { color: var(--like); }
+.editor textarea { min-height: 72px; font-family: var(--f-body); }
+.editor .pen { font-family: var(--f-pen); font-weight: 600; color: var(--red); }
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 30;
+  background: var(--ink); color: var(--sheet); padding: 8px 14px; border-radius: 99px; font-size: .9rem; max-width: calc(100% - 32px);
+}
+.fallback { display: grid; gap: 6px; padding: 0 12px 12px; }
+.fallback textarea { min-height: 120px; font-size: .85rem; }
+.sample-note { font-size: .8rem; color: var(--note); }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <h1>赤ペン返却箱</h1>
+    <p class="lede">原稿を貼って、気になるところをなぞって赤を入れる。最後に「返却用」をコピーして、書き手やAIへそのまま渡せます。</p>
+  </header>
+
+  <div class="grid">
+    <section class="panel" aria-label="原稿">
+      <div class="panel-head">
+        <input type="text" id="title" class="title-in" placeholder="話数・タイトル（例：第7話｜始まりの映像）" aria-label="話数・タイトル">
+        <div class="row">
+          <button class="small ghost" id="btnEditText" type="button">原稿を貼り替える</button>
+        </div>
+      </div>
+
+      <div id="pasteView" class="paste-area" hidden>
+        <label class="label" for="src">原稿をここに貼る</label>
+        <textarea id="src" placeholder="ここに本文を貼り付けてください"></textarea>
+        <div class="row">
+          <button class="primary" id="btnStart" type="button">赤入れを始める</button>
+          <button class="ghost" id="btnCancelPaste" type="button" hidden>やめる</button>
+          <span class="counts">貼り替えると、今の赤はすべて消えます。</span>
+        </div>
+      </div>
+
+      <div id="markView">
+        <div id="ms" class="ms" aria-label="原稿本文"></div>
+        <p class="hint" id="hint">文字をなぞって選ぶと、下に赤ペンが出てきます。赤のついた所をタップすると直せます。</p>
+      </div>
+    </section>
+
+    <aside class="panel" aria-label="赤の一覧">
+      <div class="panel-head">
+        <span class="label">赤の一覧</span>
+        <span class="counts" id="counts"></span>
+      </div>
+      <ol class="list" id="list"></ol>
+      <div class="export">
+        <button class="primary" id="btnCopyReport" type="button">返却用をコピー</button>
+        <button id="btnCopyApplied" type="button">直した本文をコピー</button>
+        <button class="ghost small" id="btnClear" type="button">赤をすべて消す</button>
+      </div>
+      <div class="fallback" id="fallback" hidden>
+        <span class="counts">コピーできなかったので、下の文字を長押しで全選択してコピーしてください。</span>
+        <textarea id="fallbackText" readonly aria-label="コピー用テキスト"></textarea>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="sheetbar" id="sheet" hidden>
+  <div class="sheet-in">
+    <div class="picked" id="picked"></div>
+    <div class="tools" id="tools">
+      <button class="t-del" id="tDel" type="button">削る</button>
+      <button class="t-rep" id="tRep" type="button">書き換え</button>
+      <button class="t-note" id="tNote" type="button">コメント</button>
+      <button class="t-like" id="tLike" type="button">ここ好き</button>
+    </div>
+    <div class="editor" id="editor" hidden>
+      <div class="row" style="justify-content:space-between">
+        <span class="label" id="editorLabel">書き換え</span>
+        <span class="counts" id="editorType"></span>
+      </div>
+      <textarea id="editorText" aria-label="赤の内容"></textarea>
+      <div class="row">
+        <button class="primary" id="btnSave" type="button">赤を入れる</button>
+        <button id="btnCancel" type="button">やめる</button>
+        <button class="ghost" id="btnRemove" type="button" hidden>この赤を消す</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function () {
+  "use strict";
+  var KEY = "akapen-henkyaku-public-v1";
+  var SAMPLE_TITLE = "【サンプル】雨の日の帰り道";
+  var SAMPLE = "駅を出ると、雨はまだ降っていた。\n\n傘を持っていないことに気づいたのは、改札を抜けてからだった。\n\n「……どうしよう」\n\n小さくつぶやいたとき、隣に誰かが立った。\n\n「入ってく？」\n\n見上げると、同じクラスの彼が、少しだけ照れたように傘を傾けていた。\n\nその傘は、二人で入るには少し小さかった。";
+
+  var state = { title: "", text: "", marks: [], seq: 1 };
+  var current = null; // { start, end } of selection, or { id } when editing an existing mark
+  var mode = null;    // "rep" | "note" | null
+
+  var $ = function (id) { return document.getElementById(id); };
+  var ms = $("ms");
+
+  function load() {
+    var raw = null;
+    try { raw = localStorage.getItem(KEY); } catch (e) { raw = null; }
+    if (raw) {
+      try {
+        var d = JSON.parse(raw);
+        if (d && typeof d.text === "string") { state = d; if (!state.seq) state.seq = 1; return; }
+      } catch (e) {}
+    }
+    state.title = SAMPLE_TITLE;
+    state.text = SAMPLE;
+    state.marks = [];
+    function mk(type, phrase, newText, note) {
+      var s = SAMPLE.indexOf(phrase);
+      if (s < 0) return;
+      state.marks.push({ id: state.seq++, type: type, start: s, end: s + phrase.length, newText: newText || "", note: note || "" });
+    }
+    mk("del", "改札を抜けてからだった。", "", "前の文で分かるので削ってもいいかも");
+    mk("rep", "少しだけ照れたように", "目をそらしながら", "");
+    mk("note", "「入ってく？」", "", "ここ、名前を呼ばせたい");
+    mk("like", "その傘は、二人で入るには少し小さかった。", "", "ラスト最高");
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  function esc(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  var TYPE_NAME = { del: "削る", rep: "書き換え", note: "コメント", like: "ここ好き" };
+
+  function sorted() {
+    return state.marks.slice().sort(function (a, b) { return a.start - b.start || a.end - b.end; });
+  }
+
+  function render() {
+    $("title").value = state.title || "";
+    var t = state.text;
+    var marks = sorted();
+    var html = "";
+    var pos = 0;
+    marks.forEach(function (m, i) {
+      if (m.start > pos) html += '<span data-s="' + pos + '">' + esc(t.slice(pos, m.start)) + "</span>";
+      var seg = esc(t.slice(m.start, m.end));
+      var n = i + 1;
+      if (m.type === "rep") {
+        html += '<span class="m m-rep" data-id="' + m.id + '" role="button" tabindex="0" aria-label="赤' + n + '・書き換え"><span class="old" data-s="' + m.start + '">' + seg + '</span><span class="new" data-skip="1">' + esc(m.newText || "") + '</span><span class="tag" data-skip="1">' + n + "</span></span>";
+      } else {
+        html += '<span class="m m-' + m.type + '" data-id="' + m.id + '" role="button" tabindex="0" aria-label="赤' + n + "・" + TYPE_NAME[m.type] + '"><span data-s="' + m.start + '">' + seg + '</span><span class="tag" data-skip="1">' + n + "</span></span>";
+      }
+      pos = m.end;
+    });
+    if (pos < t.length) html += '<span data-s="' + pos + '">' + esc(t.slice(pos)) + "</span>";
+    ms.innerHTML = html || '<span data-s="0"></span>';
+    renderList(marks);
+  }
+
+  function renderList(marks) {
+    var list = $("list");
+    var c = { del: 0, rep: 0, note: 0, like: 0 };
+    marks.forEach(function (m) { c[m.type]++; });
+    $("counts").textContent = marks.length ? "削る " + c.del + "・書き換え " + c.rep + "・コメント " + c.note + "・好き " + c.like : "";
+    if (!marks.length) {
+      list.innerHTML = '<li class="empty">まだ赤はありません。原稿の文字をなぞると、ここに並びます。</li>';
+      return;
+    }
+    list.innerHTML = marks.map(function (m, i) {
+      var q = state.text.slice(m.start, m.end);
+      var body = '<div><span class="kind k-' + m.type + '">' + TYPE_NAME[m.type] + '</span><div class="quote">「' + esc(short(q, 60)) + "」</div>";
+      if (m.type === "rep") body += '<div class="after">→「' + esc(m.newText || "") + "」</div>";
+      if (m.note) body += '<div class="memo">' + esc(m.note) + "</div>";
+      body += "</div>";
+      return '<li class="item"><span class="num">' + (i + 1) + "</span>" + body + '<button class="small ghost" type="button" data-jump="' + m.id + '">直す</button></li>';
+    }).join("");
+  }
+
+  function short(s, n) { s = s.replace(/\n+/g, " "); return s.length > n ? s.slice(0, n) + "…" : s; }
+
+  // ---- selection → offsets ----
+  function nodeOffset(node, off) {
+    // returns plain-text offset, or null
+    if (node.nodeType === 3) {
+      var el = node.parentNode;
+      if (el.closest && el.closest("[data-skip]")) {
+        var mk = el.closest(".m");
+        var mm = mk && byId(+mk.dataset.id);
+        return mm ? mm.end : null;
+      }
+      var host = el.closest ? el.closest("[data-s]") : null;
+      if (!host || !ms.contains(host)) return null;
+      return +host.dataset.s + off;
+    }
+    if (node === ms) {
+      if (off >= ms.childNodes.length) return state.text.length;
+      return firstOffset(ms.childNodes[off]);
+    }
+    if (node.nodeType === 1 && ms.contains(node)) {
+      if (off < node.childNodes.length) return firstOffset(node.childNodes[off]);
+      return lastOffset(node);
+    }
+    return null;
+  }
+  function firstOffset(n) {
+    var w = document.createTreeWalker(n, NodeFilter.SHOW_TEXT);
+    var tn = n.nodeType === 3 ? n : w.nextNode();
+    while (tn) { var v = nodeOffset(tn, 0); if (v !== null) return v; tn = w.nextNode(); }
+    return null;
+  }
+  function lastOffset(n) {
+    var w = document.createTreeWalker(n, NodeFilter.SHOW_TEXT);
+    var last = null, tn;
+    while ((tn = w.nextNode())) last = tn;
+    return last ? nodeOffset(last, last.length) : null;
+  }
+  function byId(id) { for (var i = 0; i < state.marks.length; i++) if (state.marks[i].id === id) return state.marks[i]; return null; }
+
+  function readSelection() {
+    var sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return null;
+    var r = sel.getRangeAt(0);
+    if (!ms.contains(r.commonAncestorContainer)) return null;
+    var a = nodeOffset(r.startContainer, r.startOffset);
+    var b = nodeOffset(r.endContainer, r.endOffset);
+    if (a === null || b === null) return null;
+    if (a > b) { var t = a; a = b; b = t; }
+    // trim whitespace/newlines at edges
+    while (a < b && /\s/.test(state.text[a])) a++;
+    while (b > a && /\s/.test(state.text[b - 1])) b--;
+    if (a >= b) return null;
+    return { start: a, end: b };
+  }
+
+  function overlaps(s, e, ignoreId) {
+    return state.marks.some(function (m) { return m.id !== ignoreId && s < m.end && e > m.start; });
+  }
+
+  // ---- bottom sheet ----
+  function openTools(sel) {
+    current = sel; mode = null;
+    $("picked").innerHTML = "選んだ所：<b>「" + esc(short(state.text.slice(sel.start, sel.end), 40)) + "」</b>";
+    $("tools").hidden = false; $("editor").hidden = true;
+    $("sheet").hidden = false;
+  }
+  function openEditor(kind, mark) {
+    mode = kind;
+    var target = mark || current;
+    $("picked").innerHTML = "選んだ所：<b>「" + esc(short(state.text.slice(target.start, target.end), 40)) + "」</b>";
+    $("tools").hidden = true; $("editor").hidden = false; $("sheet").hidden = false;
+    $("editorLabel").textContent = mark ? "赤" + (sorted().indexOf(mark) + 1) + "を直す" : TYPE_NAME[kind];
+    $("editorType").textContent = mark ? TYPE_NAME[mark.type] : "";
+    var ta = $("editorText");
+    ta.classList.toggle("pen", kind === "rep");
+    if (kind === "rep") {
+      ta.placeholder = "書き換えたい文を入れてください";
+      ta.value = mark ? (mark.newText || "") : state.text.slice(target.start, target.end);
+    } else {
+      ta.placeholder = kind === "note" ? "どう感じたか、どうしたいか（例：ここ冗長じゃない？）" : "ひとこと（なくてもOK）";
+      ta.value = mark ? (mark.note || "") : "";
+    }
+    $("btnSave").textContent = mark ? "直す" : "赤を入れる";
+    $("btnRemove").hidden = !mark;
+    setTimeout(function () { try { ta.focus(); } catch (e) {} }, 30);
+  }
+  function closeSheet() {
+    $("sheet").hidden = true; current = null; mode = null; editing = null;
+    $("editor").hidden = true; $("tools").hidden = false;
+    try { window.getSelection().removeAllRanges(); } catch (e) {}
+  }
+
+  function addMark(type, extra) {
+    if (!current || current.id) return;
+    if (overlaps(current.start, current.end)) { toast("ほかの赤と重なっています。少しずらして選んでください。"); return; }
+    var m = { id: state.seq++, type: type, start: current.start, end: current.end, newText: "", note: "" };
+    if (extra) { m.newText = extra.newText || ""; m.note = extra.note || ""; }
+    state.marks.push(m);
+    save(); render(); closeSheet();
+    toast("赤を入れました");
+    flash(m.id);
+  }
+
+  function flash(id) {
+    var el = ms.querySelector('.m[data-id="' + id + '"]');
+    if (!el) return;
+    el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
+  }
+
+  // keep selection alive when tapping tool buttons
+  ["tDel", "tRep", "tNote", "tLike"].forEach(function (id) {
+    $(id).addEventListener("pointerdown", function (e) { e.preventDefault(); });
+    $(id).addEventListener("mousedown", function (e) { e.preventDefault(); });
+  });
+
+  $("tDel").addEventListener("click", function () { addMark("del"); });
+  $("tLike").addEventListener("click", function () { addMark("like"); });
+  $("tRep").addEventListener("click", function () { if (current) openEditor("rep"); });
+  $("tNote").addEventListener("click", function () { if (current) openEditor("note"); });
+
+  var editing = null;
+  $("btnSave").addEventListener("click", function () {
+    var v = $("editorText").value;
+    if (editing) {
+      if (editing.type === "rep") editing.newText = v; else editing.note = v;
+      editing = null; save(); render(); closeSheet(); toast("直しました");
+      return;
+    }
+    if (mode === "rep") {
+      if (!v.trim()) { toast("書き換える文を入れてください"); return; }
+      addMark("rep", { newText: v });
+    } else if (mode === "note") {
+      if (!v.trim()) { toast("コメントを入れてください"); return; }
+      addMark("note", { note: v });
+    }
+  });
+  $("btnCancel").addEventListener("click", function () { editing = null; closeSheet(); });
+  $("btnRemove").addEventListener("click", function () {
+    if (!editing) return;
+    var id = editing.id;
+    state.marks = state.marks.filter(function (m) { return m.id !== id; });
+    editing = null; save(); render(); closeSheet(); toast("赤を消しました");
+  });
+
+  function editMark(id) {
+    var m = byId(id); if (!m) return;
+    editing = m; current = { id: id };
+    openEditor(m.type === "rep" ? "rep" : "note", m);
+    if (m.type === "del" || m.type === "like") {
+      $("editorText").placeholder = "ひとこと（なくてもOK）";
+    }
+    var el = ms.querySelector('.m[data-id="' + id + '"]');
+    if (el && el.scrollIntoView) el.scrollIntoView({ block: "center", behavior: "smooth" });
+    flash(id);
+  }
+
+  ms.addEventListener("click", function (e) {
+    var sel = window.getSelection();
+    if (sel && !sel.isCollapsed) return;
+    var mk = e.target.closest && e.target.closest(".m");
+    if (mk) editMark(+mk.dataset.id);
+  });
+  ms.addEventListener("keydown", function (e) {
+    if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("m")) { e.preventDefault(); editMark(+e.target.dataset.id); }
+  });
+  $("list").addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-jump]");
+    if (b) editMark(+b.dataset.jump);
+  });
+
+  var selTimer = null;
+  document.addEventListener("selectionchange", function () {
+    if (!$("sheet").hidden && !$("editor").hidden) return;
+    clearTimeout(selTimer);
+    selTimer = setTimeout(function () {
+      var s = readSelection();
+      if (s) { editing = null; openTools(s); }
+      else if (!$("sheet").hidden && $("editor").hidden) { $("sheet").hidden = true; current = null; }
+    }, 120);
+  });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !$("sheet").hidden) { editing = null; closeSheet(); } });
+
+  // ---- paste view ----
+  function showPaste(withCancel) {
+    $("src").value = state.text;
+    $("pasteView").hidden = false; $("markView").hidden = true;
+    $("btnCancelPaste").hidden = !withCancel;
+  }
+  function showMark() { $("pasteView").hidden = true; $("markView").hidden = false; }
+  $("btnEditText").addEventListener("click", function () { showPaste(true); });
+  $("btnCancelPaste").addEventListener("click", showMark);
+  $("btnStart").addEventListener("click", function () {
+    var v = $("src").value.replace(/\r\n?/g, "\n");
+    if (!v.trim()) { toast("原稿を貼ってください"); return; }
+    if (v !== state.text) { state.text = v; state.marks = []; }
+    if ((state.title || "").indexOf("【サンプル】") === 0) state.title = "";
+    save(); render(); showMark();
+    toast("赤入れの準備ができました");
+  });
+  $("title").addEventListener("input", function () { state.title = this.value; save(); });
+
+  // ---- export ----
+  function report() {
+    var marks = sorted();
+    var head = "【赤入れ】" + (state.title || "（タイトルなし）");
+    if (!marks.length) return head + "\n\n赤はありません。このままでOKです。";
+    var lines = [head, ""];
+    marks.forEach(function (m, i) {
+      var q = state.text.slice(m.start, m.end).replace(/\n+/g, "／");
+      var n = (i + 1) + ". ";
+      if (m.type === "del") lines.push(n + "【削る】「" + q + "」" + (m.note ? "\n   理由：" + m.note : ""));
+      else if (m.type === "rep") lines.push(n + "【書き換え】「" + q + "」\n   →「" + m.newText.replace(/\n+/g, "／") + "」");
+      else if (m.type === "note") lines.push(n + "【コメント】「" + q + "」\n   " + m.note.replace(/\n+/g, " "));
+      else lines.push(n + "【ここ好き・残す】「" + q + "」" + (m.note ? "\n   " + m.note : ""));
+    });
+    lines.push("");
+    lines.push("※「ここ好き」の箇所は、改稿でも残してください。");
+    return lines.join("\n");
+  }
+  function applied() {
+    var t = state.text, out = "", pos = 0;
+    sorted().forEach(function (m) {
+      out += t.slice(pos, m.start);
+      if (m.type === "del") out += "";
+      else if (m.type === "rep") out += m.newText;
+      else out += t.slice(m.start, m.end);
+      pos = m.end;
+    });
+    out += t.slice(pos);
+    return out.replace(/\n{3,}/g, "\n\n");
+  }
+  function copy(text, label) {
+    $("fallback").hidden = true;
+    var ok = false;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { toast(label + "をコピーしました"); }, function () { fallback(text); });
+        ok = true;
+      }
+    } catch (e) { ok = false; }
+    if (!ok) fallback(text);
+  }
+  function fallback(text) {
+    var f = $("fallbackText");
+    f.value = text; $("fallback").hidden = false;
+    try { f.focus(); f.select(); } catch (e) {}
+  }
+  $("btnCopyReport").addEventListener("click", function () { copy(report(), "返却用"); });
+  $("btnCopyApplied").addEventListener("click", function () { copy(applied(), "直した本文"); });
+
+  var clearArmed = false, clearTimer = null;
+  $("btnClear").addEventListener("click", function () {
+    if (!state.marks.length) { toast("赤はまだありません"); return; }
+    if (!clearArmed) {
+      clearArmed = true; this.textContent = "本当に消す？（もう一度押す）";
+      var b = this; clearTimer = setTimeout(function () { clearArmed = false; b.textContent = "赤をすべて消す"; }, 3000);
+      return;
+    }
+    clearTimeout(clearTimer); clearArmed = false; this.textContent = "赤をすべて消す";
+    state.marks = []; save(); render(); toast("赤をすべて消しました");
+  });
+
+  var toastTimer = null;
+  function toast(msg) {
+    var t = $("toast"); t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 2200);
+  }
+
+  load(); render(); showMark();
+})();
+</script>
+
+</body>
+</html>
